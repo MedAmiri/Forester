@@ -10,11 +10,20 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+
+import eu.ensg.forester.data.ForesterSpatialiteOpenHelper;
+import eu.ensg.spatialite.SpatialiteDatabase;
+import eu.ensg.spatialite.SpatialiteOpenHelper;
+import jsqlite.*;
+import jsqlite.Exception;
+
 public class LoginActivity extends AppCompatActivity {
 
     private EditText editText;
     private Button login;
     private Button create;
+    private SpatialiteDatabase db;
     private SharedPreferences preferences;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +57,7 @@ public class LoginActivity extends AppCompatActivity {
             preferences.getString("serial", "");
         }
         editText.setText(serialExtra);
+        initdb();
     }
 
     private void create_onClick(View view){
@@ -61,12 +71,41 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString("serial", serial);
 
-        //Toast
-        Toast leToast = Toast.makeText(this, "Login Failed", Toast.LENGTH_LONG);
-        leToast.show();
+        String serialUser = editText.getText().toString();
 
 
-        Intent intent = new Intent(this, MapsActivity.class);
-        startActivity(intent);
+        try {
+            Stmt stmt = db.prepare("SELECT ID FROM Forester WHERE Serial = '" + serialUser + "';");
+
+            if(stmt.step()){
+                int id =stmt.column_int(0);
+                Intent intent = new Intent(this, MapsActivity.class);
+                intent.putExtra("ForestID", -1);
+                startActivity(intent);
+
+                }else{
+                Toast leToast = Toast.makeText(this, "Login Failed", Toast.LENGTH_LONG);
+                leToast.show();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+    }
+
+    private void initdb(){
+        try {
+            SpatialiteOpenHelper helper = new ForesterSpatialiteOpenHelper(this);
+            db = helper.getDatabase();
+
+        } catch (jsqlite.Exception | IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this,
+                    "Cannot initialize database !", Toast.LENGTH_LONG).show();
+            System.exit(0);
+        }
+
+
     }
 }

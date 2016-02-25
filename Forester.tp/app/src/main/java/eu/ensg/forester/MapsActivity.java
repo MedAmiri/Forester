@@ -1,15 +1,9 @@
 package eu.ensg.forester;
 
-import android.Manifest;
-import android.bluetooth.BluetoothClass;
-import android.content.Context;
-import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
-import android.location.LocationManager;
 import android.net.Uri;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -19,45 +13,54 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 
+import java.io.IOException;
+import java.lang.Exception;
+
+import eu.ensg.forester.data.ForesterSpatialiteOpenHelper;
 import eu.ensg.spatialite.GPSUtils;
+import eu.ensg.spatialite.SpatialiteDatabase;
+import eu.ensg.spatialite.SpatialiteOpenHelper;
+import eu.ensg.spatialite.geom.BadGeometryException;
 import eu.ensg.spatialite.geom.Point;
 import eu.ensg.spatialite.geom.Polygon;
 import eu.ensg.spatialite.geom.XY;
 
+
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
 
     private GoogleMap mMap;
+    private com.google.android.gms.maps.model.Polygon currentMapPoly;
+
     private Point currentPosition;
     private Polygon currentDistrict;
+
+    private boolean isRecording = false;
+
     private ViewGroup actionLayout;
     private TextView xy;
-    private boolean isRecording = false;
+
     private Button save;
     private Button abort;
+    private int ForesterId;
+    private SpatialiteDatabase db;
 
+    public MapsActivity() {
+    }
 
-    com.google.android.gms.maps.model.Polygon currentMapPoly;
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
-
+    //region MAP
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,13 +85,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 abortButtonOnClick(v);
             }
         });
-        if (isRecording){
-            if(currentDistrict == null){
+        ForesterId = getIntent().getIntExtra("ForestID",-1);
+        if (isRecording) {
+            if (currentDistrict == null) {
                 currentDistrict = new Polygon();
                 currentDistrict.addCoordinate(currentPosition.getCoordinate());
                 drawDistrict();
             }
         }
+        initdb();
 
     }
 
@@ -101,10 +106,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         uiSettings.setMyLocationButtonEnabled(true);
         //LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         GPSUtils.requestLocationUpdates(this, this);
-
-
     }
+    // endregion
 
+    // region Listner
     @Override
     public void onLocationChanged(Location location) {
 
@@ -131,6 +136,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    //endregion
+
+    // region menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
@@ -144,39 +152,98 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         switch (item.getItemId()) {
             case (R.id.poi):
-                menuAddPointSelected(item);
+                try {
+                    menuAddPointSelected(item);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast leToast = Toast.makeText(this, "Position GPS unKnown", Toast.LENGTH_LONG);
+                    leToast.show();
+                }
+
             case (R.id.district):
                 menuAddDistrictSelected(item);
         }
         return true;
     }
 
-    private void menuAddPointSelected(MenuItem item) {
-        mMap.addMarker(new MarkerOptions().position(currentPosition.toLatLng()).title("ma position actuelle").snippet(currentPosition.toString()));
+    private void menuAddPointSelected(MenuItem item) throws Exception {
+        actionLayout.setVisibility(View.VISIBLE);
+        isRecording = true;
+        mMap.addMarker(new MarkerOptions().position(currentPosition.toLatLng())
+                .title("ma position actuelle").snippet(currentPosition.toString()));
+
+        try{
+            db.exec("INSERT INTO PointOfInterest (ForesterID, Name, Description, position) VALUES\n" +
+                    "('" + ForesterId + "','my position' ,'" + currentPosition.toString() + "', '" + currentPosition.toSpatialiteQuery(ForesterSpatialiteOpenHelper.SRID)  + "')");
+        }
+         catch (jsqlite.Exception e) {
+            e.printStackTrace();
+        }
+        catch (BadGeometryException e){
+            e.printStackTrace();
+        }
     }
 
     private void menuAddDistrictSelected(MenuItem item) {
         actionLayout.setVisibility(View.VISIBLE);
         isRecording = true;
+
+        try{
+            db.exec("INSERT INTO District (ForesterID, Name, Description, area) VALUES\n" +
+                    "('" + ForesterId + "','my district' ,'" + currentPosition.toString() + "', '" + currentPosition.toSpatialiteQuery(ForesterSpatialiteOpenHelper.SRID)  + "')");
+        }
+        catch (jsqlite.Exception e) {
+            e.printStackTrace();
+        }
+        catch (BadGeometryException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void drawDistrict(){
+    private void drawDistrict() {
 
-        if(currentMapPoly != null ){
+        if (currentMapPoly != null) {
             currentMapPoly.remove();
         }
         PolygonOptions polygon = new PolygonOptions();
-        for(XY xy : currentDistrict.getCoordinates().getCoords()){
+        for (XY xy : currentDistrict.getCoordinates().getCoords()) {
             polygon.add(new Point(xy).toLatLng());
         }
-        mMap.addPolygon(polygon);
+        currentMapPoly = mMap.addPolygon(polygon);
+
+
     }
-    private void saveButtonOnClick(View v){
+
+    //endregion
+
+    //region button
+    private void saveButtonOnClick(View v) {
+        actionLayout.setVisibility(View.GONE);
+        isRecording = false;
+        Toast leToast = Toast.makeText(this, "Save Finished", Toast.LENGTH_LONG);
+        leToast.show();
+
+
+    }
+
+    private void abortButtonOnClick(View v) {
         actionLayout.setVisibility(View.GONE);
         isRecording = false;
     }
-    private void abortButtonOnClick(View v){
-        actionLayout.setVisibility(View.GONE);
-        isRecording = false;
+
+    //endregion
+
+
+    private void initdb(){
+        try {
+            SpatialiteOpenHelper helper = new ForesterSpatialiteOpenHelper(this);
+            db = helper.getDatabase();
+
+        } catch (jsqlite.Exception | IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this,
+                    "Cannot initialize database !", Toast.LENGTH_LONG).show();
+            System.exit(0);
+        }
     }
 }
