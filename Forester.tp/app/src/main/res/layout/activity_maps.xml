@@ -18,13 +18,13 @@
         android:layout_height="wrap_content"
         android:textAppearance="@android:style/TextAppearance.Large"
         android:id="@+id/xy"
-        android:layout_gravity="right|top"
+        android:layout_gravity="left|top"
         android:padding="5dp"
         android:paddingLeft="5dp"
         android:paddingTop="5dp"
         android:paddingRight="5dp"
         android:paddingBottom="5dp"
-        android:background="#b4b6f2" />
+        android:background="#d9d9e1" />
 
     <LinearLayout
         android:orientation="horizontal"

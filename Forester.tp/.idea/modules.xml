@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../...iml" filepath="$PROJECT_DIR$/../...iml" />
+      <module fileurl="file://$USER_HOME$/Documents.iml" filepath="$USER_HOME$/Documents.iml" />
       <module fileurl="file://$PROJECT_DIR$/Forester.tp.iml" filepath="$PROJECT_DIR$/Forester.tp.iml" />
       <module fileurl="file://$PROJECT_DIR$/../Spatialite-Database-Driver/Spatialite-Database-Driver.iml" filepath="$PROJECT_DIR$/../Spatialite-Database-Driver/Spatialite-Database-Driver.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />

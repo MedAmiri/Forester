@@ -57,7 +57,7 @@ public class LoginActivity extends AppCompatActivity {
             preferences.getString("serial", "");
         }
         editText.setText(serialExtra);
-        initdb();
+        //initdb();
     }
 
     private void create_onClick(View view){
@@ -75,6 +75,7 @@ public class LoginActivity extends AppCompatActivity {
 
 
         try {
+            db = DataBase.getInstance(this).getDatabase();
             Stmt stmt = db.prepare("SELECT ID FROM Forester WHERE Serial = '" + serialUser + "';");
 
             if(stmt.step()){
@@ -94,18 +95,18 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void initdb(){
-        try {
-            SpatialiteOpenHelper helper = new ForesterSpatialiteOpenHelper(this);
-            db = helper.getDatabase();
-
-        } catch (jsqlite.Exception | IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this,
-                    "Cannot initialize database !", Toast.LENGTH_LONG).show();
-            System.exit(0);
-        }
-
-
-    }
+//    private void initdb(){
+//        try {
+//            SpatialiteOpenHelper helper = new ForesterSpatialiteOpenHelper(this);
+//            db = helper.getDatabase();
+//
+//        } catch (jsqlite.Exception | IOException e) {
+//            e.printStackTrace();
+//            Toast.makeText(this,
+//                    "Cannot initialize database !", Toast.LENGTH_LONG).show();
+//            System.exit(0);
+//        }
+//
+//
+//    }
 }
