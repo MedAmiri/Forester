@@ -1,20 +1,14 @@
 package eu.ensg.forester;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.lang.Exception;
-
-import eu.ensg.forester.data.ForesterSpatialiteOpenHelper;
 import eu.ensg.spatialite.SpatialiteDatabase;
-import eu.ensg.spatialite.SpatialiteOpenHelper;
-import jsqlite.*;
 
 public class CreateUserActivity extends AppCompatActivity {
 
@@ -23,7 +17,7 @@ public class CreateUserActivity extends AppCompatActivity {
     private EditText editSerial;
     private EditText editFirstName;
     private EditText editLastame;
-    private  SpatialiteDatabase db;
+    private SpatialiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +58,7 @@ public class CreateUserActivity extends AppCompatActivity {
         String LastName = editLastame.getText().toString();
         String serial = editSerial.getText().toString();
 
-        //db = DataBase.getInstance(this).getDatabase();
+        db = DataBase.getInstance(this).getDatabase();
         db.exec("INSERT INTO Forester (FirstName, LastName, Serial) VALUES\n" +
                "('"+FirstName+"', '"+LastName+"', '"+serial+"')");
     }

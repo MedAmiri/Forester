@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -30,17 +31,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.Exception;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.Locale;
 
 import eu.ensg.forester.data.ForesterSpatialiteOpenHelper;
 import eu.ensg.spatialite.GPSUtils;
 import eu.ensg.spatialite.SpatialiteDatabase;
-import eu.ensg.spatialite.SpatialiteOpenHelper;
 import eu.ensg.spatialite.geom.BadGeometryException;
 import eu.ensg.spatialite.geom.Point;
 import eu.ensg.spatialite.geom.Polygon;
@@ -64,6 +62,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Button save;
     private Button abort;
     private int ForesterId;
+    String adress;
     private SpatialiteDatabase db  = DataBase.getInstance(this).getDatabase();;
 
     public MapsActivity() {
@@ -123,6 +122,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentPosition.toLatLng()));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(15), 2000, null);
         xy.setText(currentPosition.toLatLng().toString());
+//        mMap.addMarker(new MarkerOptions().position(currentPosition.toLatLng())
+//                .title("ma position actuelle").snippet(adress));
 
         if (isRecording) {
             currentDistrict.addCoordinate(currentPosition.getCoordinate());
@@ -176,6 +177,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void menuAddPointSelected(MenuItem item)  {
+
         new AsyncTask<Void, Void, String>(){
 
             @Override
@@ -193,7 +195,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     JSONArray array = root.getJSONArray("results");
                     JSONObject ele = (JSONObject) array.get(0);
 
-                    String adress = ele.getString("formatted_adress");
+                    adress = ele.getString("formatted_adress");
 
                     db.exec("INSERT INTO PointOfInterest (ForesterID, Name, Description, position) VALUES\n" +
                             "('" + ForesterId + "','my position' ,'" + adress + "', '" + currentPosition.toSpatialiteQuery(ForesterSpatialiteOpenHelper.SRID)  + "')");
@@ -216,15 +218,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }.execute();
 
         actionLayout.setVisibility(View.VISIBLE);
-        isRecording = true;
+        //isRecording = true;
 
 
     }
     private String loadGeoCoding(){
 
         try {
+
             String uri = String.format(new Locale("en", "US"), "https://maps.googleapis.com/maps/api/geocode/json?latlng=%f,%f&key=%s",
-                    currentPosition.toLatLng().latitude,currentPosition.toLatLng().longitude,"AIzaSyC15I_i-AzURhX3MMH1jIUysR1X1aj_l1Q");
+                    currentPosition.toLatLng().latitude,currentPosition.toLatLng().longitude,"AIzaSyB15ogS8Wt4kiPxzznABcYXQyRTNJxinF0");
             Log.i(this.getClass().getName(),"requete"+uri);
             URL url = new URL(uri);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
